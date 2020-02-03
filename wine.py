@@ -1,13 +1,16 @@
 import numpy as numpy
+import pandas as pd
+import time
+import copy
+import pymongo
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait as wait
 from selenium.common.exceptions import TimeoutException
 from bs4 import BeautifulSoup
-import pandas as pd
-import os
 from datetime import datetime
+from pymongo import MongoClient
 
 
 class Wine():
@@ -32,17 +35,18 @@ class Wine():
     
     print('Current Timestamp: ', timestampStr)
 
-  def run_sel_lazyloading(self):
+  def run_sel_lazyloading(self, split, sleep=10):
     # Get the current number of rows
     current_rows_number = len(self.driver.find_elements_by_class_name('explorerCard__explorerCard--3Q7_0'))
-    total_number = int(self.driver.find_elements_by_css_selector('.querySummary__querySummary--39WP2')[0].text.split('Showing ')[1].split('wines')[0])
+    total_number = int(self.driver.find_elements_by_css_selector('.querySummary__querySummary--39WP2')[0].text.split('Showing ')[1].split(split)[0])
     print("Total Number: ", total_number)
     while current_rows_number < total_number:
         # Scroll down to make new XHR (request more table rows)
         self.driver.find_element_by_tag_name('body').send_keys(Keys.END)
         try:
             self.driver.set_window_position(0,-1000)
-            # Wait until number of rows increased       
+            # Wait until number of rows increased
+            time.sleep(sleep)    
             wait(self.driver, 50).until(lambda drive: len(self.driver.find_elements_by_class_name('explorerCard__explorerCard--3Q7_0')) > current_rows_number)
             # Update variable with current rows number
             current_rows_number = len(self.driver.find_elements_by_class_name('explorerCard__explorerCard--3Q7_0'))
@@ -60,16 +64,51 @@ class Wine():
     
     return rows
 
-  def create_df(self, rows):
+  def store_list(self, rows, type):
+
+    # austria_wine_df = pd.DataFrame()
     all_rows = []
 
     # Let's store each row as a dictionary 
     empty_row = {
-        "title": None, "country": None, "continent": None, "ratings": None, "Number of Ratings": None, "Reviews": None, "Image_URL": None
+        "title": None, "location": None, "region": None, "country": None, "price": None, "type": None, "ratings": None, "num_ratings": None, "reviews": None, "image_url": None
     }
-    print(len(rows))
-    for row in rows:
-      # vintageTitle__wine--U7t9G 
-      print(row)
-      break
 
+    for row in rows:
+      new_row = copy.copy(empty_row)
+      # A list of all the entries in the row.
+      new_row['title'] = row.find("span", {"class": "vintageTitle__wine--U7t9G"}).text
+      
+      location = row.find("div", {"class": "vintageLocation__vintageLocation--1DF0p"})
+      new_row['location'] = location.findChildren()[-1].text
+      country = row.find("i", {"class": "vintageLocation__countryFlag--1HbXr"})['title']
+      new_row['region'] = 'Oregon'
+      # if country == 'France':
+      #     new_row['region'] = 'Bordeaux'
+      # else:
+      #     new_row['region'] = 'California'
+      new_row['country'] = country
+      price_button = row.find("button", {"class": "addToCartButton__addToCartButton--qZv9F"})
+      if price_button:
+          new_row['price'] = (float(price_button.find("span").text.replace("$", "")))
+      new_row['type'] = type
+      new_row['ratings'] = row.find("div", {"class": "vivinoRatingWide__averageValue--1zL_5"}).text
+      new_row['num_ratings'] = int(row.find("div", {"class": "vivinoRatingWide__basedOn--s6y0t"}).text.split()[0])
+      review_div = row.find("div", {"class": "review__note--2b2DB"})
+      if review_div:
+          new_row['review'] = review_div.text
+      image_div = row.find("div", {"class": "cleanWineCard__bottleShotWrapper--nymTj"})
+      if image_div:
+          new_row['image_url'] = image_div.find("div").find_next('img')['src'].strip("//")
+      
+      all_rows.append(new_row)
+
+    return all_rows
+
+  def connect_mongo(self, all_rows):
+    client = MongoClient('localhost', 27017)
+    wine_db = client['wine']
+    types = wine_db['types']
+
+    for row in all_rows:
+      types.insert_one(row)
