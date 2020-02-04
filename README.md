@@ -1,1 +1,5 @@
-# wine-predictions
+# Wine Predictions
+
+![](images/wine.jpeg)
+
+## Context

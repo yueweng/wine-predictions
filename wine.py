@@ -1,114 +1,79 @@
 import numpy as numpy
 import pandas as pd
-import time
-import copy
 import pymongo
-from selenium import webdriver
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.ui import WebDriverWait as wait
-from selenium.common.exceptions import TimeoutException
-from bs4 import BeautifulSoup
-from datetime import datetime
 from pymongo import MongoClient
-
+import matplotlib.pyplot as plt
 
 class Wine():
-  def __init__(self, url):
-        self.url = url
-        self.path = r'/Users/yuewengmak/Desktop/chromedriver'
-        self.driver = webdriver.Chrome(executable_path = self.path)
+  def __init__(self):
+      self.collection = None
+      self.df = None
 
-  def setup_driver(self):
-
-    self.driver.implicitly_wait(30)
-    self.driver.get(self.url)
-
-  def tracking(self):
-    self.run_timestamp()
-    self.run_sel_lazyloading()
-    self.run_timestamp()
-
-  def run_timestamp(self):
-    dateTimeObj = datetime.now()
-    timestampStr = dateTimeObj.strftime("%d-%b-%Y (%H:%M:%S.%f)")
-    
-    print('Current Timestamp: ', timestampStr)
-
-  def run_sel_lazyloading(self, split, sleep=10):
-    # Get the current number of rows
-    current_rows_number = len(self.driver.find_elements_by_class_name('explorerCard__explorerCard--3Q7_0'))
-    total_number = int(self.driver.find_elements_by_css_selector('.querySummary__querySummary--39WP2')[0].text.split('Showing ')[1].split(split)[0])
-    print("Total Number: ", total_number)
-    while current_rows_number < total_number:
-        # Scroll down to make new XHR (request more table rows)
-        self.driver.find_element_by_tag_name('body').send_keys(Keys.END)
-        try:
-            self.driver.set_window_position(0,-1000)
-            # Wait until number of rows increased
-            time.sleep(sleep)    
-            wait(self.driver, 50).until(lambda drive: len(self.driver.find_elements_by_class_name('explorerCard__explorerCard--3Q7_0')) > current_rows_number)
-            # Update variable with current rows number
-            current_rows_number = len(self.driver.find_elements_by_class_name('explorerCard__explorerCard--3Q7_0'))
-            if current_rows_number % 200 == 0:
-              print("Curr Row Number: ", current_rows_number)
-        # If number of rows remains the same after 5 seconds passed, break the loop
-        # as there no more rows to receive
-        except TimeoutException:
-            break
-
-  def create_rows(self):
-    html = BeautifulSoup(self.driver.page_source, 'lxml')
-    div = html.find("div", {"class": "explorerPage__results--3wqLw"})
-    rows = html.find_all("div", {"class": "explorerCard__explorerCard--3Q7_0"})
-    
-    return rows
-
-  def store_list(self, rows, type):
-
-    # austria_wine_df = pd.DataFrame()
-    all_rows = []
-
-    # Let's store each row as a dictionary 
-    empty_row = {
-        "title": None, "location": None, "region": None, "country": None, "price": None, "type": None, "ratings": None, "num_ratings": None, "reviews": None, "image_url": None
-    }
-
-    for row in rows:
-      new_row = copy.copy(empty_row)
-      # A list of all the entries in the row.
-      new_row['title'] = row.find("span", {"class": "vintageTitle__wine--U7t9G"}).text
-      
-      location = row.find("div", {"class": "vintageLocation__vintageLocation--1DF0p"})
-      new_row['location'] = location.findChildren()[-1].text
-      country = row.find("i", {"class": "vintageLocation__countryFlag--1HbXr"})['title']
-      new_row['region'] = 'Oregon'
-      # if country == 'France':
-      #     new_row['region'] = 'Bordeaux'
-      # else:
-      #     new_row['region'] = 'California'
-      new_row['country'] = country
-      price_button = row.find("button", {"class": "addToCartButton__addToCartButton--qZv9F"})
-      if price_button:
-          new_row['price'] = (float(price_button.find("span").text.replace("$", "")))
-      new_row['type'] = type
-      new_row['ratings'] = row.find("div", {"class": "vivinoRatingWide__averageValue--1zL_5"}).text
-      new_row['num_ratings'] = int(row.find("div", {"class": "vivinoRatingWide__basedOn--s6y0t"}).text.split()[0])
-      review_div = row.find("div", {"class": "review__note--2b2DB"})
-      if review_div:
-          new_row['review'] = review_div.text
-      image_div = row.find("div", {"class": "cleanWineCard__bottleShotWrapper--nymTj"})
-      if image_div:
-          new_row['image_url'] = image_div.find("div").find_next('img')['src'].strip("//")
-      
-      all_rows.append(new_row)
-
-    return all_rows
-
-  def connect_mongo(self, all_rows):
+  def get_wine_data(self):
     client = MongoClient('localhost', 27017)
     wine_db = client['wine']
-    types = wine_db['types']
+    self.collection = wine_db['types']
 
-    for row in all_rows:
-      types.insert_one(row)
+    return self
+
+  def create_df(self):
+    '''{'_id': ObjectId('5e34c6e0ac2e8d38fb91773e'), 'title': 'J. Schram Brut 2008', 
+    'location': 'North Coast', 'region': 'California', 'country': 'United States', 'price': 99.0, 
+    'type': 'Sparkling', 'ratings': '4.5', 'num_ratings': 191, 'reviews': None, 
+    'image_url': 'images.vivino.com/thumbs/4NLjpfRDSeaCN147hSePKA_pb_x300.png'}'''
+    lst = []
+    for row in self.collection.find():
+      if 'review' in row:
+        reviews = row['review']
+      else:
+        reviews = None
+      dict_row = {'id': row['_id'], 'title': row['title'], \
+                  'location': row['location'], 'region': row['region'], \
+                  'country': row['country'], 'price': row['price'], \
+                  'type': row['type'], 'ratings': float(row['ratings']), 'num_ratings': row['num_ratings'], \
+                  'reviews': reviews, 'image_url': row['image_url']}
+
+      lst.append(dict_row)
+    
+    self.df = pd.DataFrame(lst)
+    return self
+
+  def create_vintage_column(self):
+    self.df['vintage'] = self.df['title'].apply(lambda x: int(x.split(' ')[-1]) if self.representsInt(x.split(' ')[-1]) else None)
+    return self
+
+  def representsInt(self, s):
+    try: 
+        int(s)
+        return True
+    except ValueError:
+        return False
+
+  def plot_type_based_on_popularity(self):
+    ratings_wine = self.df.groupby('type').agg({'num_ratings': 'count'}).reset_index()
+    ratings_wine.sort_values(by=['num_ratings'], ascending=False, inplace=True)
+    fig, ax = plt.subplots(figsize=[20, 10])
+    ax.bar(ratings_wine['type'], ratings_wine['num_ratings'])
+    ax.set_title('Wine Types based on Popularity', fontsize=20, pad=20)
+    ax.set_xlabel('Wine Types', fontsize=20)
+    ax.set_ylabel('Num of Ratings', fontsize=20)
+    plt.savefig('images/wine_types_popularity.png')
+
+  def plot_country_based_on_type_popularity(self, ty):
+    wine_df = self.df
+    type_df = wine_df[wine_df['type'] == ty]
+    type_df = type_df.groupby('country').agg({'num_ratings': 'count'}).reset_index()
+    type_df.sort_values(by='num_ratings', ascending=False, inplace=True)
+    
+    fig, ax = plt.subplots(figsize=[20, 10])
+    ax.bar(type_df['country'], type_df['num_ratings'])
+    ax.set_xlabel('Country', fontsize=20)
+    ax.set_ylabel('Num of Ratings', fontsize=20) 
+    ax.set_title('{} Wine Based on Popularity'.format(ty), fontsize=20, pad=20)
+    plt.savefig('images/{}_country_types_popularity.png'.format(ty.lower()))
+
+  def country_rating_plot(self):
+    types_wine = ['Sparkling', 'Red', 'White', 'Rosé', 'Dessert', 'Port']
+
+    for ty in types_wine:
+      self.plot_country_based_on_type_popularity(ty)
