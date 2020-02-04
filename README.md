@@ -1,5 +1,5 @@
 # Wine Predictions
 
-![](images/wine.jpeg)
+![](images/wine.jpg)
 
 ## Context
