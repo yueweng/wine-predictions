@@ -28,7 +28,7 @@ I set a few thresholds for this model, setting a 0 if the price is below a certa
 ![](images/roc_curve.png)
 
 ### Random Forest Regressor
-Accuracy = 80.6%
+Accuracy = 80.6%\
 RMSE = 13.84
 
 Feauture Importance
