@@ -32,4 +32,11 @@ Accuracy = 80.6%\
 RMSE = 13.84
 
 Feauture Importance
- ![](images/feature_importance_rf.png)
+![](images/feature_importance_rf.png)
+
+### Gradient Boosting
+
+![](images/gradient_boosting.png)
+
+RMSE = 13.12
+![](images/feature_importance_grad_boosting.png)
