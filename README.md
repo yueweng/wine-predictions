@@ -19,7 +19,7 @@ I looked into a few models to predict the wine prices.
 ### Linear Regression
 The most basic model I go with since the result is continuous.
 
-![](images/linear_regression.png)
+R^2 = 0.772
 
 ### Logistic Regression
 
@@ -27,4 +27,9 @@ I set a few thresholds for this model, setting a 0 if the price is below a certa
 
 ![](images/roc_curve.png)
 
+### Random Forest Regressor
+Accuracy = 80.6%
+RMSE = 13.84
 
+Feauture Importance
+ ![](images/feature_importance_rf.png)
