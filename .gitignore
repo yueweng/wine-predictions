@@ -2,3 +2,4 @@ __pycache__/
 capstone_test.ipynb
 .ipynb_checkpoints/
 .DS_Store
+notes.py
