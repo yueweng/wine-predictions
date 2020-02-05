@@ -19,7 +19,7 @@ I looked into a few models to predict the wine prices.
 ### Linear Regression
 The most basic model I go with since the result is continuous.
 
-R^2 = 0.772
+RMSE = 25.024
 
 ### Logistic Regression
 
