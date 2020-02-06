@@ -16,7 +16,7 @@ After scraping the data, some prices are returning null since the price is not p
 ![](images/num_ratings_price.png)
 
 ![](images/vintage_avg_price.png)
-![](images/vintage_price_plot.png)
+![](images/vintage_price_plot_types.png)
 
 ## Modeling
 
