@@ -4,7 +4,7 @@
 
 ## Introduction
 
-In this project, I will predict the prices of the wines based on numerous factors, like vintage, country, ratings, type of grapes.
+In this project, I will predict the prices of the wines based on numerous factors, like vintage, country, ratings, popularity.
 
 ## Data Collection
 I am using Selenium to scrape the data from Vivino.com, a popular wine review site, where there are over more than 100,000 wines. I used MongoDB as my database to store the data and convert it to DataFrame for analysis. I am focusing on a few popular countries that produce wines, with ratings above 3.5 stars and a price range of up to $250.
