@@ -12,6 +12,9 @@ I am using Selenium to scrape the data from Vivino.com, a popular wine review si
 ## Cleaning the data
 After scraping the data, some prices are returning null since the price is not present on the site. I converted these null values to 0 and took out these rows so that my model will not take into account wines with $0 prices. 
 
+## EDA
+![](images/num_ratings_price.png)
+
 ## Modeling
 
 I looked into a few models to predict the wine prices.
