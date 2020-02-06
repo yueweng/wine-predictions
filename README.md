@@ -44,5 +44,6 @@ Feauture Importance
 
 ![](images/gradient_boosting.png)
 
+Learning rate = 0.1
 RMSE = 13.12
 ![](images/feature_importance_grad_boosting.png)
