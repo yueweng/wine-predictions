@@ -15,7 +15,7 @@ After scraping the data, some prices are returning null since the price is not p
 ## EDA
 ![](images/num_ratings_price.png)
 
-![](images/vintage_price.png)
+![](images/vintage_avg_price.png)
 ![](images/vintage_price_plot.png)
 
 ## Modeling
