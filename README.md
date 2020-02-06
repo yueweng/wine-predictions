@@ -15,6 +15,8 @@ After scraping the data, some prices are returning null since the price is not p
 ## EDA
 ![](images/num_ratings_price.png)
 
+![](images/vintage_price_plot.png)
+
 ## Modeling
 
 I looked into a few models to predict the wine prices.
