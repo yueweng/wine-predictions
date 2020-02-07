@@ -22,6 +22,8 @@ After scraping the data, some prices are returning null since the price is not p
 
 I looked into a few models to predict the wine prices.
 
+
+
 ### Linear Regression
 The most basic model I go with since the result is continuous.
 
@@ -34,8 +36,9 @@ I set a few thresholds for this model, setting a 0 if the price is below a certa
 ![](images/roc_curve.png)
 
 ### Random Forest Regressor
-Accuracy = 80.6%\
-RMSE = 13.84
+RMSE = 13.84\
+
+with GridSearch, RMSE = 13.59
 
 Feauture Importance
 ![](images/feature_importance_rf.png)
@@ -45,5 +48,7 @@ Feauture Importance
 ![](images/gradient_boosting.png)
 
 Learning rate = 0.1\
-RMSE = 13.12
+RMSE = 13.12\
+
+with GridSearch, RMSE = 12.9
 ![](images/feature_importance_grad_boosting.png)

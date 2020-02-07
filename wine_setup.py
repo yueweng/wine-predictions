@@ -64,43 +64,34 @@ class WineSetup():
     return rows
 
   def store_list(self, rows, type):
-
-    # austria_wine_df = pd.DataFrame()
     all_rows = []
 
     # Let's store each row as a dictionary 
     empty_row = {
-        "title": None, "location": None, "region": None, "country": None, "price": None, "type": None, "ratings": None, "num_ratings": None, "reviews": None, "image_url": None
+        "title": None, "location": None, "country": None, "price": 0.0, "type": None, "ratings": None, "num_ratings": None, "reviews": None, "url": None, "vintage": ""
     }
 
     for row in rows:
-      new_row = copy.copy(empty_row)
-      # A list of all the entries in the row.
-      new_row['title'] = row.find("span", {"class": "vintageTitle__wine--U7t9G"}).text
-      
-      location = row.find("div", {"class": "vintageLocation__vintageLocation--1DF0p"})
-      new_row['location'] = location.findChildren()[-1].text
-      country = row.find("i", {"class": "vintageLocation__countryFlag--1HbXr"})['title']
-      new_row['region'] = 'Oregon'
-      # if country == 'France':
-      #     new_row['region'] = 'Bordeaux'
-      # else:
-      #     new_row['region'] = 'California'
-      new_row['country'] = country
-      price_button = row.find("button", {"class": "addToCartButton__addToCartButton--qZv9F"})
-      if price_button:
-          new_row['price'] = (float(price_button.find("span").text.replace("$", "")))
-      new_row['type'] = type
-      new_row['ratings'] = row.find("div", {"class": "vivinoRatingWide__averageValue--1zL_5"}).text
-      new_row['num_ratings'] = int(row.find("div", {"class": "vivinoRatingWide__basedOn--s6y0t"}).text.split()[0])
-      review_div = row.find("div", {"class": "review__note--2b2DB"})
-      if review_div:
-          new_row['review'] = review_div.text
-      image_div = row.find("div", {"class": "cleanWineCard__bottleShotWrapper--nymTj"})
-      if image_div:
-          new_row['image_url'] = image_div.find("div").find_next('img')['src'].strip("//")
-      
-      all_rows.append(new_row)
+        new_row = copy.copy(empty_row)
+        # A list of all the entries in the row.
+        new_row['title'] = row.find("span", {"class": "vintageTitle__wine--U7t9G"}).text
+        location = row.find("div", {"class": "vintageLocation__vintageLocation--1DF0p"})
+        new_row['location'] = location.findChildren()[-1].text
+        country = row.find("i", {"class": "vintageLocation__countryFlag--1HbXr"})['title']
+        new_row['country'] = country
+        price_button = row.find("button", {"class": "addToCartButton__addToCartButton--qZv9F"})
+        if price_button:
+            new_row['price'] = (float(price_button.find("span").text.replace("$", "")))
+        new_row['type'] = type
+        new_row['ratings'] = row.find("div", {"class": "vivinoRatingWide__averageValue--1zL_5"}).text
+        new_row['num_ratings'] = int(row.find("div", {"class": "vivinoRatingWide__basedOn--s6y0t"}).text.split()[0])
+        review_div = row.find("div", {"class": "review__note--2b2DB"})
+        if review_div:
+            new_row['reviews'] = review_div.text
+        clean_div = row.find("div", {"class": "cleanWineCard__cleanWineCard--tzKxV cleanWineCard__row--CBPRR"})
+        if clean_div:
+            new_row['url'] = 'https://www.vivino.com' + clean_div.find("a")['href']
+        all_rows.append(new_row)
 
     return all_rows
 

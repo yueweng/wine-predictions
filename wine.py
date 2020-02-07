@@ -3,6 +3,7 @@ import pandas as pd
 import pymongo
 from pymongo import MongoClient
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
 
 class Wine():
   def __init__(self):
@@ -18,10 +19,6 @@ class Wine():
     return self
 
   def create_df(self):
-    '''{'_id': ObjectId('5e34c6e0ac2e8d38fb91773e'), 'title': 'J. Schram Brut 2008', 
-    'location': 'North Coast', 'region': 'California', 'country': 'United States', 'price': 99.0, 
-    'type': 'Sparkling', 'ratings': '4.5', 'num_ratings': 191, 'reviews': None, 
-    'image_url': 'images.vivino.com/thumbs/4NLjpfRDSeaCN147hSePKA_pb_x300.png'}'''
     lst = []
     for row in self.collection.find():
       if 'review' in row:
@@ -101,25 +98,28 @@ class Wine():
     for ty in types_wine:
       self.plot_country_based_on_type_popularity(ty)
 
-  def get_us_wines(self):
-    us_df = self.df[self.df['country'] == 'United States']
-    return us_df
+  def get_df_group_by_type(self):
+    type_df = self.df.groupby(['type']).agg({'ratings': 'mean', 'num_ratings': 'sum', 'price': 'mean'}).reset_index()
+    type_df.sort_values(by=['price'], ascending=False)
 
-  def plot_us_type_wine(self, us_df):
-    us_type = us_df.groupby('type').agg({'num_ratings': 'sum', 'ratings': 'mean'}).reset_index()
-    us_type.sort_values(by=['num_ratings'], ascending=False, inplace=True)
+    return type_df
 
-    self.plot_graph(us_type['type'], us_type['num_ratings'], 'Wine Types based in United States', 'Type', 'Num of Ratings', 'images/wine_types_us.png')
+  def plot_num_ratings_price(self, type_df):
+    wine_df = self.df
+    unique_type = type_df['type'].unique()
+    color = ['brown', 'green', 'red', 'yellow', 'blue', 'purple']
+    fig, ax = plt.subplots(figsize=[20,10])
 
-  def plot_red_white_us_wine(self, us_df):
-    types = ['Red', 'White']
+    for idx, ty in enumerate(unique_type):
+        uniq_type_df = wine_df[wine_df['type'] == ty]
+        ax.scatter(uniq_type_df['num_ratings'], uniq_type_df['price'], label=ty, color=color[idx])
+    plt.legend(fontsize=20)
 
-    for t in types:
-      color_us_df = us_df[us_df['type'] == t]
-      color_type = color_us_df.groupby('grapes').agg({'num_ratings': 'sum'}).reset_index()
-      color_type.sort_values(by=['num_ratings'], ascending=False, inplace=True)
+    ax.set_title('Num Ratings vs Price', fontsize=20, pad=20)
+    ax.set_xlabel('Num Ratings', fontsize=20)
+    ax.set_ylabel('Price', fontsize=20)
 
-      self.plot_graph(color_type['grapes'], color_type['num_ratings'], '{} Wine based on Grapes in the United States'.format(t), 'Grapes', 'Num Ratings', 'images/{}_wine_grapes_us.png')
+    # plt.savefig('images/num_ratings_price.png', bbox_inches = "tight")
   
   def get_dummies(self, col):
     wine_df = self.df
@@ -132,3 +132,14 @@ class Wine():
       shorten_df = pd.concat([shorten_df, dummy], axis=1)
 
     return shorten_df
+
+  def get_train_data(self, final_dummy):
+    train_data = final_dummy[(final_dummy['price'] > 0.0) & (final_dummy['vintage'] > 0.0)]
+    X = train_data.drop(columns=['price', 'type', 'grapes', 'id', 'title', 'country'])
+    y = train_data['price']
+
+    return X, y
+
+  def split_data(self, X, y, test_size=0.33):
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=42)
+    return X_train, X_test, y_train, y_test
